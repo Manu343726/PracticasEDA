@@ -1143,11 +1143,12 @@ protected:
  */
 void ignoraEspacios(istream &in) {
   int c;
+  char cchar;
   bool ok = true;
   // in.peek() mira, *sin extraerlo*, el siguiente caracter de in
   while (ok)
   {
-	  c = in.peek();
+	  c = in.peek(); cchar = (char)c; //Absurdo, para depurar
 	  ok = (c == ' ' || c == '\t' || c == '\r'|| c == '\n');
 
 	// es un espacio: extrae el caracter
@@ -1188,17 +1189,30 @@ Arbin<int> leeArbolEnPreorden() {
  */
 Arbin<int> leeArbolConParentesis() {
 	int c1,c2,c3,c4,c5;
+	char c1char,c2char;
+	bool negativo = false;
   // ejemplo de entrada:
   // (2 (1 () () ) (3 () (4 (5 () () ) (6 () () ) ) ) )
 
   // ignora parentesis de apertura y posibles espacios
   ignoraEspacios(cin);
 
-  c1 = cin.get();
-  c2 = cin.peek();
+  c1 = cin.get(); c1char=(char)c1;
+  c2 = cin.peek(); c2char=(char)c2;
 
   assert(c1 == '(');
   ignoraEspacios(cin);
+
+  ///MODIFICACION PARA EL CASO ESPACIOS ENTRE SIGNO Y NUMERO///
+  if(cin.peek() == '-')
+  {
+	  negativo = true;
+	  cin.get();
+	  ignoraEspacios(cin);
+  }
+  else
+	  negativo = false;
+
   // fin o recursion
   if (cin.peek() == ')') {
 	// ignora parentesis de cierre y devuelve vacio
@@ -1213,7 +1227,7 @@ Arbin<int> leeArbolConParentesis() {
 	// ignora espacios + cierre y devuelve leido
 	ignoraEspacios(cin);
  	assert(cin.get() == ')');
-	return Arbin<int>(iz, valor, dr);
+	return Arbin<int>(iz,negativo ? -valor : valor, dr);
   }
 }
 
@@ -1308,7 +1322,8 @@ int main (void) {
 	Arbin<int> arbol;
 	Cola<bool> cola;
 
-	while (cin >> goal) {
+	while (cin.peek() != '\n') {
+		cin >> goal;
 		arbol = leeArbolConParentesis();
 		cola.ponDetras (checksum(arbol, 0, goal));
 
@@ -1334,7 +1349,6 @@ bool checksum(const Arbin<int> &tree, int sum,const int goal)
 	else
 	{
 		if(!tree.hijoIz().esVacio() && !tree.hijoDr().esVacio())
-
 			return checksum(tree.hijoIz(),sum + tree.raiz(),goal) || checksum(tree.hijoDr(),sum + tree.raiz(),goal);
 		else if(!tree.hijoIz().esVacio())
 			return checksum(tree.hijoIz(),sum + tree.raiz(),goal);
