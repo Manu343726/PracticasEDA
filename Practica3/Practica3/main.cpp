@@ -1143,13 +1143,18 @@ protected:
  */
 void ignoraEspacios(istream &in) {
   int c;
+  bool ok = true;
   // in.peek() mira, *sin extraerlo*, el siguiente caracter de in
-  while ((c = in.peek()) && 
-		(c == ' ' || c == '\t' || 
-		 c == '\r'|| c == '\n')) {
+  while (ok)
+  {
+	  c = in.peek();
+	  ok = (c == ' ' || c == '\t' || c == '\r'|| c == '\n');
+
 	// es un espacio: extrae el caracter
-	in.get(); 
+	if(ok) in.get(); 
   }
+
+  c = c;
 }
 
 /*
@@ -1182,12 +1187,17 @@ Arbin<int> leeArbolEnPreorden() {
  * 	muestraConParentesis (posiblemente con mas espacios)
  */
 Arbin<int> leeArbolConParentesis() {
+	int c1,c2,c3,c4,c5;
   // ejemplo de entrada:
   // (2 (1 () () ) (3 () (4 (5 () () ) (6 () () ) ) ) )
 
   // ignora parentesis de apertura y posibles espacios
   ignoraEspacios(cin);
-  assert(cin.get() == '(');
+
+  c1 = cin.get();
+  c2 = cin.peek();
+
+  assert(c1 == '(');
   ignoraEspacios(cin);
   // fin o recursion
   if (cin.peek() == ')') {
@@ -1297,10 +1307,8 @@ int main (void) {
 	int goal;
 	Arbin<int> arbol;
 	Cola<bool> cola;
-	char c;
 
-	while (ISDIGIT(c = cin.peek())) {
-		cin >> goal;
+	while (cin >> goal) {
 		arbol = leeArbolConParentesis();
 		cola.ponDetras (checksum(arbol, 0, goal));
 
@@ -1308,11 +1316,11 @@ int main (void) {
 	}
 
 	while (!cola.esVacia ()) {
-		if (cola.primero ()) {
+		if (cola.primero ())
 			cout << "yes" << endl;
-		} else {
+		else
 			cout << "no" << endl;
-		}
+		
 		cola.quitaPrim ();
 	}
 
