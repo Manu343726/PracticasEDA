@@ -1286,37 +1286,51 @@ int main()
 		}
 
 		for(PhoneTree::Iterador it = phoneTree.principio() ; it != phoneTree.final() ; it.avanza())
-			if(it.valor() > 1)
 				cout << it.clave() << " " << it.valor() << endl;
 	}
 }
-
-
-#define ISNUMBER(x) ((x) >= '0' && (x) <= '9')
-#define ISALPHA(x) (((x) >= 'a' && (x) <= 'z') || ((x) >= 'A' && (x) <= 'Z'))
 
 //char to_standard_number(char c) {return '2' + (c < 'Q') ? (((c - 'A') / 3)) : (((c - 'A' - 1) / 3));}
 
 char to_standard_number(char c)
 {
-	if(c >= 'A' && c <= 'C')
+	switch(c)
+	{
+	case 'A':
+	case 'B':
+	case 'C':
 		return '2';
-	else if(c >= 'D' && c <= 'F')
+	case 'D':
+	case 'E':
+	case 'F':
 		return '3';
-	else if(c >= 'G' && c <= 'I')
+	case 'G':
+	case 'H':
+	case 'I':
 		return '4';
-	else if(c >= 'J' && c <= 'L')
+	case 'J':
+	case 'K':
+	case 'L':
 		return '5';
-	else if(c >= 'M' && c <= 'O')
+	case 'M':
+	case 'N':
+	case 'O':
 		return '6';
-	else if(c >= 'P' && c <= 'S')
+	case 'P':
+	case 'R':
+	case 'S':
 		return '7';
-	else if(c >= 'T' && c <= 'V')
+	case 'T':
+	case 'U':
+	case 'V':
 		return '8';
-	else if(c >= 'W' && c <= 'Y')
+	case 'W':
+	case 'X':
+	case 'Y':
 		return '9';
-	else
+	default:
 		return -1;
+	}
 }
 
 void to_standard(string& number)
@@ -1326,7 +1340,7 @@ void to_standard(string& number)
 
 	while(i < number.size())
 	{
-		if(ISALPHA(number[i]))
+		if(isalpha(number[i]))
 			number[i] = to_standard_number(number[i]);
 		else
 			if(number[i] == '-')
