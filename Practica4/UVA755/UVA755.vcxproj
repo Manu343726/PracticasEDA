@@ -11,9 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{12E3B7F5-E528-4E5C-859E-E8E1A0884541}</ProjectGuid>
-    <RootNamespace>Practica4</RootNamespace>
-    <ProjectName>UVA156</ProjectName>
+    <ProjectGuid>{5296631B-AEAB-4F8C-9D8D-DA866D23C91F}</ProjectGuid>
+    <RootNamespace>UVA755</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -61,13 +60,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="156.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Arbus.h" />
-    <ClInclude Include="Excepciones.h" />
-    <ClInclude Include="Lista.h" />
-    <ClInclude Include="Pila.h" />
+    <ClCompile Include="UVA755.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
