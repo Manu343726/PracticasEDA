@@ -3,7 +3,27 @@
 #include <ctype.h>
 #include <iostream>
 #include <vector>
+#include <sstream>
 
+#define DELETE(x) delete (x); (x) = NULL;
+
+const bool DEBUGGING = false;
+
+const char* DEBUG_INPUT_STRING = "1\n"
+								  "\n"
+								  "12\n"
+								  "4873279\n"
+								  "ITS-EASY\n"
+								  "888-4567\n"
+								  "3-10-10-10\n"
+								  "888-GLOP\n"
+								  "TUT-GLOP\n"
+								  "967-11-11\n"
+								  "310-GINO\n"
+								  "F101010\n"
+								  "888-1200\n"
+								  "-4-8-7-3-2-7-9-\n"
+								  "487-3279";
 using namespace std;
 
 /*
@@ -830,6 +850,9 @@ public:
 		_ra = NULL;
 	}
 
+	//Elimina todos los nodos (Reinicializa el arbol)
+	void clear() {libera();}
+
 	/**
 	 Operación generadora que añade una nueva clave/valor
 	 a un árbol de búsqueda.
@@ -1036,6 +1059,7 @@ protected:
 
 	void libera() {
 		libera(_ra);
+		_ra=NULL;
 	}
 
 	void copia(const Arbus &other) {
@@ -1054,6 +1078,7 @@ private:
 		if (ra != NULL) {
 			libera(ra->_iz);
 			libera(ra->_dr);
+
 			delete ra;
 		}
 	}
@@ -1256,27 +1281,30 @@ typedef unsigned int uint; //Si, soy un vago
 
 typedef Arbus<string,uint> PhoneTree;
 
+void _155(istream& is = std::cin);
 char to_standard_number(char c);
 void to_standard(string& number);
 
-int main()
+void _155(istream& is)
 {
 	PhoneTree phoneTree;
 	uint dataSetsCount, phoneNumbersCount;
 	string standard;
 	vector<string> results;
 
-	cin >> dataSetsCount;
+	is >> dataSetsCount;
 
 	for(uint i = 0 ; i < dataSetsCount ; ++i)
 	{
-		cin.get();
-		cin.get();
-		cin >> phoneNumbersCount;
+		is.get();
+		is.get();
+		is >> phoneNumbersCount;
+
+		phoneTree.clear();
 
 		for(uint j = 0 ; j < phoneNumbersCount ; ++j)
 		{
-			cin >> standard;
+			is >> standard;
 			to_standard(standard);
 
 			if(phoneTree.esta(standard))
@@ -1286,15 +1314,31 @@ int main()
 		}
 
 		for(PhoneTree::Iterador it = phoneTree.principio() ; it != phoneTree.final() ; it.avanza())
+			if(it.valor() > 1)
 				cout << it.clave() << " " << it.valor() << endl;
 	}
+}
+
+int main()
+{
+	if(DEBUGGING)
+	{
+		stringstream input((string)DEBUG_INPUT_STRING,ios_base::in);
+
+		_155(input);
+
+		cin.sync();
+		cin.get();
+	}
+	else
+		_155();
 }
 
 //char to_standard_number(char c) {return '2' + (c < 'Q') ? (((c - 'A') / 3)) : (((c - 'A' - 1) / 3));}
 
 char to_standard_number(char c)
 {
-	switch(c)
+	switch(toupper(c))
 	{
 	case 'A':
 	case 'B':
@@ -1335,8 +1379,8 @@ char to_standard_number(char c)
 
 void to_standard(string& number)
 {
-	uint i = 0;
-	uint hyphenPos = 3;
+	int i = 0;
+	int hyphenPos = 3;
 
 	while(i < number.size())
 	{
@@ -1344,7 +1388,7 @@ void to_standard(string& number)
 			number[i] = to_standard_number(number[i]);
 		else
 			if(number[i] == '-')
-				number.erase(number.begin() + i);
+				number.erase(number.begin() + i--);
 
 		++i;
 	}
