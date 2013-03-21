@@ -7,7 +7,7 @@
 
 #define DELETE(x) delete (x); (x) = NULL;
 
-const bool DEBUGGING = true;
+const bool DEBUGGING = false;
 
 const char* DEBUG_INPUT_STRING = "1\n"
 								 "\n"
@@ -68,6 +68,64 @@ const char* DEBUG_INPUT_STRING_LARGE = "1\n"
 									"DB1E---046\n"
 									"36O--7-1W2\n"
 									"-R--52-P-Y7H\n";
+
+const char* DEBUG_INPUT_STRING_MERGE = "2\n"
+									"\n"
+									"40\n"
+									"0U--4N712\n"
+									"---X2-KN-U-75\n"
+									"VR-J37G--3\n"
+									"85W-0Y6-V\n"
+									"85W-0Y6-V\n"
+									"85W-0Y6-V\n"
+									"--N-6AV4-NK\n"
+									"--XL----F-PO--B-0\n"
+									"-P-10167P\n"
+									"7--R8YME-N\n"
+									"P-U-1O6W-----1\n"
+									"X-KFK87--L\n"
+									"YFX63K-N\n"
+									"-3-73G---ELH\n"
+									"--2RD-6-IJ-Y\n"
+									"P2--SJ9G9\n"
+									"P2--SJ9G9\n"
+									"O-1----2287-2\n"
+									"-DC-C1L-3V\n"
+									"7963V68\n"
+									"U-66X52M\n"
+									"U-66X52M\n"
+									"-8-16F5TG\n"
+									"---YN-32E5-K\n"
+									"---YN-32E5-K\n"
+									"4--KDJ-PV2\n"
+									"4--KDJ-PV2\n"
+									"P27-42L2\n"
+									"P27-42L2\n"
+									"-MIWO-W5D\n"
+									"44M7675\n"
+									"F---6-7R80M\n"
+									"T5S6U1-P\n"
+									"T5S6U1-P\n"
+									"T5S6U1-P\n"
+									"BUM85L--3\n"
+									"BUM85L--3\n"
+									"DB1E---046\n"
+									"36O--7-1W2\n"
+									"-R--52-P-Y7H\n"
+								 "\n"
+								 "12\n"
+								 "4873279\n"
+								 "ITS-EASY\n"
+								 "888-4567\n"
+								 "3-10-10-10\n"
+								 "888-GLOP\n"
+								 "TUT-GLOP\n"
+								 "967-11-11\n"
+								 "310-GINO\n"
+								 "F101010\n"
+								 "888-1200\n"
+								 "-4-8-7-3-2-7-9-\n"
+								 "487-3279";
 using namespace std;
 
 /*
@@ -1323,7 +1381,7 @@ typedef Arbus<string,AnagramData> AnagramsTree;
 
 typedef unsigned int uint; //Si, soy un vago
 
-typedef Arbus<string,uint> PhoneTree;
+typedef Arbus<string,int> PhoneTree;
 
 void _155(istream& is = std::cin);
 char to_standard_number(char c);
@@ -1335,6 +1393,8 @@ void _155(istream& is)
 	uint dataSetsCount, phoneNumbersCount;
 	string standard;
 	vector<string> results;
+
+	vector<vector<string> > datasetsOutput;
 
 	is >> dataSetsCount;
 
@@ -1357,17 +1417,43 @@ void _155(istream& is)
 				phoneTree.inserta(standard,1);
 		}
 
+		results.clear();
+
 		for(PhoneTree::Iterador it = phoneTree.principio() ; it != phoneTree.final() ; it.avanza())
 			if(it.valor() > 1)
-				cout << it.clave() << " " << it.valor() << endl;
+			{
+				char valor[100];
+				string result = it.clave() + " ";
+				ostringstream os("");
+				os << it.valor();
+				result += os.str();
+
+				results.push_back(result);
+			}
+
+		if(results.size() == 0)
+			results.push_back("No duplicates.");
+		else
+		{
+			sort(results.rbegin(),results.rend());
+			datasetsOutput.push_back(results);
+		}
+
+		results.clear();
+		results.push_back("");
+		datasetsOutput.push_back(results);
 	}
+
+	for(uint i = 0 ; i < datasetsOutput.size() ; ++i)
+		for(uint j = 0 ; j < datasetsOutput[i].size() ; ++j)
+			cout << datasetsOutput[i][j] << endl;
 }
 
 int main()
 {
 	if(DEBUGGING)
 	{
-		stringstream input((string)DEBUG_INPUT_STRING_LARGE,ios_base::in);
+		stringstream input((string)DEBUG_INPUT_STRING_MERGE,ios_base::in);
 
 		_155(input);
 
