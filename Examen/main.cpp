@@ -977,22 +977,22 @@ void ignoraEspacios(istream &in) {
 * 	asumiendo un formato similar a la salida de
 * 	muestraEnPreorden (posiblemente con mas espacios)
 */
-Arbin<int> leeArbolEnPreorden() {
+Arbin<int> leeArbolEnPreorden(istream& is = cin) {
 	// ejemplo de entrada:
 	// 5 7 -1 6 -1 3 -1 -1
 
 	// ignora posibles espacios y lee un entero
-	ignoraEspacios(cin);
+	ignoraEspacios(is);
 	int valor;
-	cin >> valor;
+	is >> valor;
 
 	if (valor == -1) {
 		// devuelve vacio
 		return Arbin<int>();
 	} else {
 		// leemos subarboles y devolvemos leido
-		const Arbin<int> &iz = leeArbolEnPreorden();
-		const Arbin<int> &dr = leeArbolEnPreorden();
+		const Arbin<int> &iz = leeArbolEnPreorden(is);
+		const Arbin<int> &dr = leeArbolEnPreorden(is);
 		return Arbin<int>(iz, valor, dr);
 	}
 }
@@ -1387,7 +1387,7 @@ public:
 	 * El iterador devuelto coincidirá con final() si la tabla está vacía.
 	 * @return iterador al primer par (clave, valor) de la tabla.
 	 */
-	const Iterador principio() {
+	 Iterador principio() const {
 		
 		unsigned int ind = 0;
 		Nodo* act = _v[ind];
@@ -1602,6 +1602,13 @@ typedef Arbin<int> Arbol;
 
 typedef Lista<Tabla<int,int> >::Iterador ResultIterator;
 
+const char* DEBUG_INPUT = "5 7 -1 6 -1 -1 3 -1 -1\n"
+                          "8 2 9 -1 -1 6 5 -1 -1 12 -1\n"
+						  "-1 3 7 -1 -1 -1\n"
+                          "-1";
+
+const bool DEBUGGING = true;
+
 void Authum(Tabla<int,int>& leaves, uint pos , Arbol& arbol) {
 	if (!arbol.esVacio()) {
 		if(leaves.esta(pos))
@@ -1609,18 +1616,20 @@ void Authum(Tabla<int,int>& leaves, uint pos , Arbol& arbol) {
 		else
 			leaves.inserta(pos,arbol.raiz());
 
-		Authum(leaves,pos+1,arbol);
-		Authum(leaves,pos-1,arbol);
+		Authum(leaves,pos-1,arbol.hijoIz());
+		Authum(leaves,pos+1,arbol.hijoDr());
 	}
 }
 
 void printLeaves(const Tabla<int,int>& leaves) {
-	stringstream output("",ios_base::out);
+	stringstream output("",ios_base::out | ios_base::in);
 
-	for(Tabla<int,int> :: Iterador it = leaves.principio() ; it != leaves.final() ; it.avanza())
+	for(Tabla<int, int>::Iterador it = leaves.principio(); it != leaves.final() ; it.avanza())
 		output << it.valor() << " ";
 
+	output.get();//elimina el ultimo espacio
 
+	cout << output.str() << endl << endl;
 }
 
 void printResults(Lista<Tabla<int,int> > results)
@@ -1633,23 +1642,40 @@ void printResults(Lista<Tabla<int,int> > results)
 	}
 }
 
-int main (void) {
+void _699(istream& is = cin)
+{
 	Lista <Tabla<int,int> > results;
 	
 
-	while (!cin.eof()) {
+	while (!is.eof()) {
 		Arbin<int> a;
 		Tabla<int,int> leaves;
 
-		a = leeArbolEnPreorden();
+		a = leeArbolEnPreorden(is);
 		if (!a.esVacio()) {
 			Authum(leaves,0, a);
 			results.ponDr(leaves);
 		}
 
-		ignoraEspacios(cin);
+		ignoraEspacios(is);
 	}
 	printResults (results);
+	
+}
+
+int main (void) {
+	if(DEBUGGING)
+	{
+		stringstream input((string)DEBUG_INPUT,ios::in);
+
+		_699(input);
+
+		cin.sync();
+		cin.get();
+	}
+	else
+		_699();
+
 	return 0;
 }
 
