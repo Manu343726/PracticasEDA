@@ -2083,7 +2083,7 @@ const bool DEBUGGING = false;
 
 #define Arbusto Arbus
 
-void Authum(Arbusto<int,int>& leaves, int pos , Arbol& arbol) {
+void Authum(Arbusto<int,int>& leaves, int pos , Arbin<int>& arbol) {
 	if (!arbol.esVacio()) {
 		if(leaves.esta(pos))
 		{
