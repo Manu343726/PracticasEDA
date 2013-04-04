@@ -5,6 +5,8 @@ using namespace std;
 #include <iosfwd>
 #include <cassert>
 #include <sstream>
+#include <vector>
+#include <cmath>
 
 class ExcepcionTAD {
 public:
@@ -1609,15 +1611,21 @@ const char* DEBUG_INPUT = "5 7 -1 6 -1 -1 3 -1 -1\n"
 
 const bool DEBUGGING = true;
 
-void Authum(Tabla<int,int>& leaves, uint pos , Arbol& arbol) {
+void Authum(Tabla<int,int>& leaves, uint pos , Arbol& arbol,int& count) {
 	if (!arbol.esVacio()) {
 		if(leaves.esta(pos))
-			leaves.consulta(pos) += arbol.raiz();
+		{
+			int valor = leaves.consulta(pos);
+			leaves.inserta(pos,valor + arbol.raiz());
+		}
 		else
+		{
 			leaves.inserta(pos,arbol.raiz());
+			count++;
+		}
 
-		Authum(leaves,pos-1,arbol.hijoIz());
-		Authum(leaves,pos+1,arbol.hijoDr());
+		Authum(leaves,pos-1,arbol.hijoIz(),count);
+		Authum(leaves,pos+1,arbol.hijoDr(),count);
 	}
 }
 
@@ -1644,23 +1652,33 @@ void printResults(Lista<Tabla<int,int> > results)
 
 void _699(istream& is = cin)
 {
-	Lista <Tabla<int,int> > results;
-	
+	Lista <vector<int> > results;
+	vector<int> resultsVector;
 
 	while (!is.eof()) {
 		Arbin<int> a;
 		Tabla<int,int> leaves;
+		int count = 0;
+		int offset;
 
 		a = leeArbolEnPreorden(is);
 		if (!a.esVacio()) {
-			Authum(leaves,0, a);
-			results.ponDr(leaves);
+			Authum(leaves,0, a,count);
+
+			offset
+
+			resultsVector.reserve(count);
+
+			for(Tabla<int,int>::Iterador it = leaves.principio() ; it != leaves.final() ; it.avanza())
+
+
+			results.ponDr(resultsVector);
 		}
 
 		ignoraEspacios(is);
 	}
+
 	printResults (results);
-	
 }
 
 int main (void) {
