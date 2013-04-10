@@ -1877,6 +1877,14 @@ protected:
 	void copia(const Arbus &other) {
 		_ra = copiaAux(other._ra);
 	}
+	
+	Nodo* minKey(Nodo* nodo)
+	{
+		if(nodo->_iz)
+			return minKey(nodo->_iz);
+		else
+			return nodo;
+	}
 
 private:
 
