@@ -108,7 +108,6 @@ DECLARA_EXCEPCION(EAccesoInvalido);
 #ifndef __LISTA_H
 #define __LISTA_H
 
-#include "Excepciones.h"
 #include <cassert>
 
 /**
@@ -574,8 +573,6 @@ private:
 #ifndef __PILA_H
 #define __PILA_H
 
-#include "Excepciones.h"
-
 /**
  Implementación del TAD Pila utilizando vectores dinámicos.
 
@@ -755,8 +752,7 @@ private:
 #ifndef __ARBUS_H
 #define __ARBUS_H
 
-template<typename TKey ,typename TValue>
-typedef Arbus<TKey , TValue> Arbusto<TKey , TValue>;
+#define Arbusto Arbus
 
 /**
  Implementación dinámica del TAD Arbus utilizando 
