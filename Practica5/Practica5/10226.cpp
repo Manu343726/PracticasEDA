@@ -1259,7 +1259,7 @@ private:
 
 using namespace std;
 
-#define DEBUGGING 1
+#define DEBUGGING 0
 const char* DEBUG_INPUT_EXAMPLE = "1\n"
 								  "Red Alder\n"
 								  "Ash\n"
@@ -1315,27 +1315,36 @@ void _10226(istream& input)
 	uint treesCount;
 	Lista<string> results;
 
+	bool endTest;
+
 	input >> testsCount;
 	input.get();//Linea en blanco
 
 	for(uint i = 0 ; i < testsCount ; ++i)
 	{
 		treesCount = 0;
+		endTest = false;
 
-		while(input.peek() != ENDLINE_CHAR)
+		while(!endTest)
 		{
 			string tree; std::getline(input,tree);
 			uint treeCount;
+			countData = Tarbusto<string , uint>();//Nueva tabla...
 
-			if( countData.esta(tree) ) 
+			if(tree != "")
 			{
-				treeCount = countData.consulta(tree);
-				countData.inserta(tree , treeCount+1);
+				if( countData.esta(tree) ) 
+				{
+					treeCount = countData.consulta(tree);
+					countData.inserta(tree , treeCount+1);
+				}
+				else
+					countData.inserta(tree , 1);
+
+				treesCount++;
 			}
 			else
-				countData.inserta(tree , 1);
-
-			treesCount++;
+				endTest = true;
 		}
 
 		vector<string> unorderedResults;
@@ -1354,10 +1363,12 @@ void _10226(istream& input)
 		for(vector<string>::iterator it = unorderedResults.begin() ; it != unorderedResults.end() ; ++it)
 			results.insertar(*it , results.final());
 
-		input.get();//Linea vacía entre tests.
-		results.insertar( ENDLINE_STRING , results.final() );
-
-		countData = Tarbusto<string , uint>();//Nueva tabla...Si tuviera clear() no haría esta burrada 
+		if(i < testsCount - 1) 
+		{
+			results.insertar( ENDLINE_STRING , results.final() );
+		}
+		//else
+		//	results.insertar( ENDLINE_STRING , results.final() );
 	}
 
 	for(Lista<string>::Iterador it = results.principio() ; it != results.final() ; it.avanza() )
