@@ -754,502 +754,512 @@ private:
 
 #endif // __PILA_H
 
+/**
+ @file Hash.h
+ 
+ Declaración e implementación de funciones de localización para
+ tipos básicos y función genérica que confía en la existencia
+ del método método hash de las clases.
+ 
+ Estructura de Datos y Algoritmos
+ Facultad de Informática
+ Universidad Complutense de Madrid
+ 
+ (c) Antonio Sánchez Ruiz-Granados, 2012
+ */
 
-#ifndef __ARBUS_H
-#define __ARBUS_H
+// ----------------------------------------------------
+//
+// Funciones hash para distintos tipos de datos básicos
+//
+// ----------------------------------------------------
 
-#define Arbusto Arbus
+inline unsigned int hash(unsigned int clave) {
+	return clave;
+}
+
+inline unsigned int hash(int clave) {
+	return (unsigned int) clave;
+}
+
+inline unsigned int hash(char clave) {
+	return clave;
+}
+
+// Nota: Esta función de hash para cadenas no es muy buena.
+inline unsigned int hash(std::string clave) {
+	
+	// Suma los valores ASCII de todos sus caracters.
+	unsigned int valor = 0;
+	for (unsigned int i=0; i<clave.length(); ++i) {
+		valor += clave[i];
+	}
+	return valor;
+}
+
 
 /**
- Implementación dinámica del TAD Arbus utilizando 
- nodos con un puntero al hijo izquierdo y otro al
- hijo derecho.
-
- Las operaciones son:
-
- - ArbusVacio: operación generadora que construye
- un árbol de búsqueda vacío.
-
- - Inserta(clave, valor): generadora que añade una 
- nueva pareja (clave, valor) al árbol. Si la
- clave ya estaba se sustituye el valor.
-
- - borra(clave): operación modificadora. Elimina la
- clave del árbol de búsqueda.  Si la clave no está,
- la operación no tiene efecto.
-
- - consulta(clave): operación observadora que devuelve
- el valor asociado a una clave. Es un error preguntar
- por una clave que no existe.
-
- - esta(clave): operación observadora. Sirve para
- averiguar si se ha introducido una clave en el
- árbol.
-
- - esVacio(): operacion observadora que indica si
- el árbol de búsqueda tiene alguna clave introducida.
-
- @author Marco Antonio Gómez Martín
+ * Función hash genérica para clases que implementen un
+ * método publico hash.
  */
-template <class Clave, class Valor>
-class Arbus {
+template<class C>
+unsigned int hash(const C &clave) {
+	return clave.hash();
+}
+
+
+// ---------------------------------------------
+//
+// TAD Tabla 
+//
+// ---------------------------------------------
+
+#define Tarbusto Tabla
+
+
+/**
+ Implementación del TAD Tabla usando una tabla hash abierta.
+ 
+ Las operaciones públicas son:
+ 
+ - TablaVacia: -> Tabla. Generadora (constructor).
+ - inserta: Tabla, Clave, Valor -> Tabla. Generadora.
+ - borra: Tabla, Clave -> Tabla. Modificadora.
+ - esta: Tabla, Clave -> Bool. Observadora.
+ - consulta: Tabla, Clave - -> Valor. Observadora parcial. 
+ - esVacia: Tabla -> Bool. Observadora.
+ 
+ @author Antonio Sánchez Ruiz-Granados
+ */
+template <class C, class V>
+class Tabla {
 private:
+	
 	/**
-	 Clase nodo que almacena internamente la pareja (clave, valor)
-	 y los punteros al hijo izquierdo y al hijo derecho.
+	 * La tabla contiene un array de punteros a nodos. Cada nodo contiene una 
+	 * clave, un valor y un puntero al siguiente nodo.
 	 */
 	class Nodo {
 	public:
-		Nodo() : _iz(NULL), _dr(NULL) {}
-		Nodo(const Clave &clave, const Valor &valor) 
-			: _clave(clave), _valor(valor), _iz(NULL), _dr(NULL) {}
-		Nodo(Nodo *iz, const Clave &clave, const Valor &valor, Nodo *dr)
-			: _clave(clave), _valor(valor), _iz(iz), _dr(dr) {}
-
-		Clave _clave;
-		Valor _valor;
-		Nodo *_iz;
-		Nodo *_dr;
+		/* Constructores. */
+		Nodo(const C &clave, const V &valor) : 
+				_clave(clave), _valor(valor), _sig(NULL) {};
+		
+		Nodo(const C &clave, const V &valor, Nodo *sig) : 
+				_clave(clave), _valor(valor), _sig(sig) {};
+		
+		/* Atributos públicos. */
+		C _clave;    
+		V _valor;   
+		Nodo *_sig;  // Puntero al siguiente nodo.
 	};
-
+	
 public:
-
-	/** Constructor; operacion ArbolVacio */
-	Arbus() : _ra(NULL) {
+	
+	/**
+	 * Tamaño inicial de la tabla.
+	 */
+	static const int TAM_INICIAL = 10;
+	
+	/**
+	 * Constructor por defecto. Crea una tabla con TAM_INICIAL
+	 * posiciones.
+	 */
+	Tabla() : _v(new Nodo*[TAM_INICIAL]), _tam(TAM_INICIAL), _numElems(0) {
+		for (unsigned int i=0; i<_tam; ++i) {
+			_v[i] = NULL;
+		}
 	}
-
-	/** Destructor; elimina la estructura jerárquica de nodos. */
-	~Arbus() {
+	
+	/**
+	 * Destructor.
+	 */
+	~Tabla() {
 		libera();
-		_ra = NULL;
 	}
-
+	
 	/**
-	 Operación generadora que añade una nueva clave/valor
-	 a un árbol de búsqueda.
-	 @param clave Clave nueva.
-	 @param valor Valor asociado a esa clave. Si la clave
-	 ya se había insertado previamente, sustituimos el valor
-	 viejo por el nuevo.
+	 * Inserta un nuevo par (clave, valor) en la tabla. Si ya existía un 
+	 * elemento con esa clave, se actualiza su valor.
+	 *
+	 * @param clave clave del nuevo elemento.
+	 * @param valor valor del nuevo elemento.
 	 */
-	void inserta(const Clave &clave, const Valor &valor) {
-		_ra = insertaAux(clave, valor, _ra);
+	void inserta(const C &clave, const V &valor) {
+		
+		// Si la ocupación es muy alta ampliamos la tabla
+		float ocupacion = 100 * ((float) _numElems) / _tam; 
+		if (ocupacion > MAX_OCUPACION)
+			amplia();
+		
+		// Obtenemos el índice asociado a la clave.
+		unsigned int ind = ::hash(clave) % _tam;
+		
+		// Si la clave ya existía, actualizamos su valor
+		Nodo *nodo = buscaNodo(clave, _v[ind]);
+		if (nodo != NULL) {
+			nodo->_valor = valor;
+		} else {
+			
+			// Si la clave no existía, creamos un nuevo nodo y lo insertamos
+			// al principio
+			_v[ind] = new Nodo(clave, valor, _v[ind]);
+			_numElems++;
+		}
 	}
-
+	
 	/**
-	 Operación modificadora que elimina una clave del árbol.
-	 Si la clave no existía la operación no tiene efecto.
-
-	   borra(elem, ArbusVacio) = ArbusVacio
-	   borra(e, inserta(c, v, arbol)) = 
-	                     inserta(c, v, borra(e, arbol)) si c != e
-	   borra(e, inserta(c, v, arbol)) = borra(e, arbol) si c == e
-
-	 @param clave Clave a eliminar.
+	 * Elimina el elemento de la tabla con la clave dada. Si no existía ningún
+	 * elemento con dicha clave, la tabla no se modifica.
+	 *
+	 * @param clave clave del elemento a eliminar.
 	 */
-	void borra(const Clave &clave) {
-		_ra = borraAux(_ra, clave);
+	void borra(const C &clave) {
+		
+		// Obtenemos el índice asociado a la clave.
+		unsigned int ind = ::hash(clave) % _tam;
+		
+		// Buscamos el nodo que contiene esa clave y el nodo anterior.
+		Nodo *act = _v[ind];
+		Nodo *ant = NULL;
+		buscaNodo(clave, act, ant);
+		
+		if (act != NULL) {
+			
+			// Sacamos el nodo de la secuencia de nodos.
+			if (ant != NULL) {
+				ant->_sig = act->_sig;
+			} else {
+				_v[ind] = act->_sig;
+			}
+			
+			// Borramos el nodo extraído.
+			delete act;
+			_numElems--;
+		}
 	}
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// @fn	void borra()
-	///
-	/// @brief	Deletes tree's root (Clears the tree).
-	///
-	/// @author	Manu
-	/// @date	11/04/2013
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	void borra()
-	{
-		delete _ra;
-		_ra=NULL;
-	}
-
+	
 	/**
-	 Operación observadora que devuelve el valor asociado
-	 a una clave dada.
-
-	 consulta(e, inserta(c, v, arbol)) = v si e == c
-	 consulta(e, inserta(c, v, arbol)) = consulta(e, arbol) si e != c
-	 error consulta(ArbusVacio)
-
-	 @param clave Clave por la que se pregunta.
+	 * Comprueba si la tabla contiene algún elemento con la clave dada.
+	 *
+	 * @param clave clave a buscar.
+	 * @return si existe algún elemento con esa clave.
 	 */
-	const Valor &consulta(const Clave &clave) {
-		Nodo *p = buscaAux(_ra, clave);
-		if (p == NULL)
+	bool esta(const C &clave) {
+		// Obtenemos el índice asociado a la clave.
+		unsigned int ind = ::hash(clave) % _tam;
+		
+		// Buscamos un nodo que contenga esa clave.
+		Nodo *nodo = buscaNodo(clave, _v[ind]);
+		return nodo != NULL;
+	}
+	
+	/**
+	 * Devuelve el valor asociado a la clave dada. Si la tabla no contiene 
+	 * esa clave lanza una excepción.
+	 *
+	 * @param clave clave del elemento a buscar.
+	 * @return valor asociado a dicha clave.
+	 * @throw EClaveInexistente si la clave no existe en la tabla.
+	 */
+	V consulta(const C &clave) {
+		
+		// Obtenemos el índice asociado a la clave.
+		unsigned int ind = ::hash(clave) % _tam;
+		
+		// Buscamos un nodo que contenga esa clave.
+		Nodo *nodo = buscaNodo(clave, _v[ind]);
+		if (nodo == NULL)
 			throw EClaveErronea();
-
-		return p->_valor;
+		
+		return nodo->_valor;
 	}
 
 	/**
-	 Operación observadora que permite averiguar si una clave
-	 determinada está o no en el árbol de búsqueda.
-
-	 esta(e, ArbusVacio) = false
-	 esta(e, inserta(c, v, arbol)) = true si e == c
-	 esta(e, inserta(c, v, arbol)) = esta(e, arbol) si e != c
-
-	 @param clave Clave por la que se pregunta.
+	 * Indica si la tabla está vacía, es decir, si no contiene ningún elemento.
+	 *
+	 * @return si la tabla está vacía.
 	 */
-	bool esta(const Clave &clave) {
-		return buscaAux(_ra, clave) != NULL;
+	bool esVacia() {
+		return _numElems == 0;
 	}
-
+	
 	/**
-	 Operación observadora que devuelve si el árbol
-	 es vacío (no contiene elementos) o no.
-
-	 esVacio(ArbusVacio) = true
-	 esVacio(inserta(c, v, arbol)) = false
-	 */
-	bool esVacio() const {
-		return _ra == NULL;
-	}
-
-	// //
-	// OPERACIONES RELACIONADAS CON LOS ITERADORES
-	// //
-
-	/**
-	 Clase interna que implementa un iterador sobre
-	 la lista que permite recorrer la lista e incluso
-	 alterar el valor de sus elementos.
+	 * Clase interna que implementa un iterador sobre el conjunto de pares
+	 * (clave, valor). Es importante tener en cuenta que el iterador puede
+	 * devolver el conunto de pares en cualquier orden.
 	 */
 	class Iterador {
 	public:
 		void avanza() {
 			if (_act == NULL) throw EAccesoInvalido();
-
-			// Si hay hijo derecho, saltamos al primero
-			// en inorden del hijo derecho
-			if (_act->_dr)
-				_act = primeroInOrden(_act->_dr);
-			else {
-				// Si no, vamos al primer ascendiente
-				// no visitado. Para eso consultamos
-				// la pila; si ya está vacía, no quedan
-				// ascendientes por visitar
-				if (_ascendientes.esVacia())
-					_act = NULL;
-				else {
-					_act = _ascendientes.cima();
-					_ascendientes.desapila();
-				}
+			
+			// Buscamos el siguiente nodo de la lista de nodos.
+			_act = _act->_sig;
+			
+			// Si hemos llegado al final de la lista de nodos, seguimos
+			// buscando por el vector _v.
+			while ((_act == NULL) && (_ind < _tabla->_tam - 1)) {
+				++_ind;
+				_act = _tabla->_v[_ind];
 			}
 		}
-
-		const Clave &clave() const {
+		
+		const C& clave() const {
 			if (_act == NULL) throw EAccesoInvalido();
 			return _act->_clave;
 		}
-
-		const Valor &valor() const {
+		
+		const V& valor() const {
 			if (_act == NULL) throw EAccesoInvalido();
 			return _act->_valor;
 		}
-
+		
 		bool operator==(const Iterador &other) const {
 			return _act == other._act;
 		}
-
+		
 		bool operator!=(const Iterador &other) const {
 			return !(this->operator==(other));
 		}
-	protected:
-		// Para que pueda construir objetos del
-		// tipo iterador
-		friend class Arbus;
+		
+	private:
+		// Para que pueda construir objetos del tipo iterador
+		friend class Tabla;
+		
+		Iterador(const Tabla* tabla, Nodo* act, unsigned int ind) 
+			: _tabla(tabla), _act(act), _ind(ind) { }
 
-		Iterador() : _act(NULL) {}
-		Iterador(Nodo *act) {
-			_act = primeroInOrden(act);
-		}
-
-		/**
-		 Busca el primer elemento en inorden de
-		 la estructura jerárquica de nodos pasada
-		 como parámetro; va apilando sus ascendientes
-		 para poder "ir hacia atrás" cuando sea necesario.
-		 @param p Puntero a la raíz de la subestructura.
-		 */
-		Nodo *primeroInOrden(Nodo *p) {
-			if (p == NULL)
-				return NULL;
-
-			while (p->_iz != NULL) {
-				_ascendientes.apila(p);
-				p = p->_iz;
-			}
-			return p;
-		}
-
-		// Puntero al nodo actual del recorrido
-		// NULL si hemos llegado al final.
-		Nodo *_act;
-
-		// Ascendientes del nodo actual
-		// aún por visitar
-		Pila<Nodo*> _ascendientes;
+		
+		Nodo* _act;				///< Puntero al nodo actual del recorrido
+		unsigned int _ind;		///< Índice actual en el vector _v
+		const Tabla *_tabla;	///< Tabla que se está recorriendo
+		
 	};
 	
 	/**
-	 Devuelve el iterador al principio de la lista.
-	 @return iterador al principio de la lista;
-	 coincidirá con final() si la lista está vacía.
+	 * Devuelve un iterador al primer par (clave, valor) de la tabla. 
+	 * El iterador devuelto coincidirá con final() si la tabla está vacía.
+	 * @return iterador al primer par (clave, valor) de la tabla.
 	 */
 	Iterador principio() {
-		return Iterador(_ra);
+		
+		unsigned int ind = 0;
+		Nodo* act = _v[ind];
+		
+		while ((act == NULL) && (ind < _tam - 1)) {
+			++ind;
+			act = _v[ind];
+		}
+		
+		return Iterador(this, act, ind);
 	}
-
+	
 	/**
-	 @return Devuelve un iterador al final del recorrido
-	 (fuera de éste).
+	 * Devuelve un iterador al final del recorrido (apunta más allá del último
+	 * elemento de la tabla).
+	 * @return iterador al final del recorrido.
 	 */
 	Iterador final() const {
-		return Iterador(NULL);
+		return Iterador(this, NULL, _tam);
 	}
-
-
-	// //
-	// MÉTODOS DE "FONTANERÍA" DE C++ QUE HACEN VERSÁTIL
-	// A LA CLASE
-	// //
-
-	/** Constructor copia */
-	Arbus(const Arbus<Clave, Valor> &other) : _ra(NULL) {
+	
+	
+	// 
+	// MÉTODOS DE "FONTANERÍA" DE C++ QUE HACEN VERSÁTIL A LA CLASE
+	// 
+	
+	/**
+	 * Constructor por copia.
+	 *
+	 * @param other tabla que se quiere copiar.
+	 */
+	Tabla(const Tabla<C,V> &other) {
 		copia(other);
 	}
-
-	/** Operador de asignación */
-	Arbus<Clave, Valor> &operator=(const Arbus<Clave, Valor> &other) {
+	
+	/**
+	 * Operador de asignación.
+	 *
+	 * @param other tabla que se quiere copiar.
+	 * @return referencia a este mismo objeto (*this).
+	 */
+	Tabla<C,V> &operator=(const Tabla<C,V> &other) {
 		if (this != &other) {
 			libera();
 			copia(other);
 		}
 		return *this;
 	}
-
-protected:
-
-	/**
-	 Constructor protegido que crea un árbol
-	 a partir de una estructura jerárquica de nodos
-	 previamente creada.
-	 Se utiliza en hijoIz e hijoDr.
-	 */
-	Arbus(Nodo *raiz) : _ra(raiz) {
-	}
-
-	void libera() {
-		libera(_ra);
-	}
-
-	void copia(const Arbus &other) {
-		_ra = copiaAux(other._ra);
-	}
-
+	
+	
 private:
-
+	
+	// Para que el iterador pueda acceder a la parte privada
+	friend class Iterador;
+	
 	/**
-	 Elimina todos los nodos de una estructura arbórea
-	 que comienza con el puntero ra.
-	 Se admite que el nodo sea NULL (no habrá nada que
-	 liberar).
+	 * Libera toda la memoria dinámica reservada para la tabla.
 	 */
-	static void libera(Nodo *ra) {
-		if (ra != NULL) {
-			libera(ra->_iz);
-			libera(ra->_dr);
-			delete ra;
+	void libera() {
+		
+		// Liberamos las listas de nodos.
+		for (unsigned int i=0; i<_tam; i++) {
+			liberaNodos(_v[i]);
+		}
+		
+		// Liberamos el array de punteros a nodos.
+		if (_v != NULL) {
+			delete[] _v;
+			_v = NULL;
 		}
 	}
+	
+	/**
+	 * Libera un nodo y todos los siguientes.
+	 *
+	 * @param prim puntero al primer nodo de la lista a liberar.
+	 */
+	static void liberaNodos(Nodo *prim) {
+		
+		while (prim != NULL) {
+			Nodo *aux = prim;
+			prim = prim->_sig;
+			delete aux;
+		}		
+	}	
 
 	/**
-	 Copia la estructura jerárquica de nodos pasada
-	 como parámetro (puntero a su raiz) y devuelve un
-	 puntero a una nueva estructura jerárquica, copia
-	 de anterior (y que, por tanto, habrá que liberar).
+	 * Hace una copia de la tabla que recibe como parámetro. Antes de llamar
+	 * a este método se debe invocar al método "liberar".
+	 *
+	 * @param other tabla que se quiere copiar.
 	 */
-	static Nodo *copiaAux(Nodo *ra) {
-		if (ra == NULL)
-			return NULL;
-
-		return new Nodo(copiaAux(ra->_iz),
-						ra->_clave, ra->_valor,
-						copiaAux(ra->_dr));
-	}
-
-	/**
-	 Inserta una pareja (clave, valor) en la estructura
-	 jerárquica que comienza en el puntero pasado como parámetro.
-	 Ese puntero se admite que sea NULL, por lo que se creará
-	 un nuevo nodo que pasará a ser la nueva raíz de esa
-	 estructura jerárquica. El método devuelve un puntero a la
-	 raíz de la estructura modificada. En condiciones normales
-	 coincidirá con el parámetro recibido; sólo cambiará si
-	 la estructura era vacía.
-	 @param clave Clave a insertar. Si ya aparecía en la
-	 estructura de nodos, se sobreescribe el valor.
-	 @param valor Valor a insertar.
-	 @param p Puntero al nodo raíz donde insertar la pareja.
-	 @return Nueva raíz (o p si no cambia).
-	 */
-	static Nodo *insertaAux(const Clave &clave, const Valor &valor, Nodo *p) {
-
-		if (p == NULL) {
-			return new Nodo(clave, valor);
-		} else if (p->_clave == clave) {
-			p->_valor = valor;
-			return p;
-		} else if (clave < p->_clave) {
-			p->_iz = insertaAux(clave, valor, p->_iz);
-			return p;
-		} else { // (clave > p->_clave)
-			p->_dr = insertaAux(clave, valor, p->_dr);
-			return p;
+	void copia(const Tabla<C,V> &other) {
+		_tam = other._tam;
+		_numElems = other._numElems;
+	
+		// Reservar memoria para el array de punteros a nodos.
+		_v = new Nodo*[_tam];
+		for (unsigned int i=0; i<_tam; ++i) { 
+			_v[i] = NULL;
+			
+			// Copiar la lista de nodos de other._v[i] a _v[i].
+			// La lista de nodos queda invertida con respecto a la original.
+			Nodo *act = other._v[i];
+			while (act != NULL) {
+				_v[i] = new Nodo(act->_clave, act->_valor, _v[i]); 
+				act = act->_sig;
+			}
 		}
 	}
-
+	
 	/**
-	 Busca una clave en la estructura jerárquica de
-	 nodos cuya raíz se pasa como parámetro, y devuelve
-	 el nodo en la que se encuentra (o NULL si no está).
-	 @param p Puntero a la raíz de la estructura de nodos
-	 @param clave Clave a buscar
+	 * Este método duplica la capacidad del array de punteros actual.
 	 */
-	static Nodo *buscaAux(Nodo *p, const Clave &clave) {
-		if (p == NULL)
-			return NULL;
+	void amplia() {
+		// Creamos un puntero al array actual y anotamos su tamaño.
+		Nodo **vAnt = _v;
+		unsigned int tamAnt = _tam;
 
-		if (p->_clave == clave)
-			return p;
-
-		if (clave < p->_clave)
-			return buscaAux(p->_iz, clave);
-		else
-			return buscaAux(p->_dr, clave);
+		// Duplicamos el array en otra posición de memoria.
+		_tam *= 2; 
+		_v = new Nodo*[_tam];
+		for (unsigned int i=0; i<_tam; ++i)
+			_v[i] = NULL;
+		
+		// Recorremos el array original moviendo cada nodo a la nueva 
+		// posición que le corresponde en el nuevo array.
+		for (unsigned int i=0; i<tamAnt; ++i) {
+			
+			// IMPORTANTE: Al modificar el tamaño también se modifica el índice
+			// asociado a cada nodo. Es decir, los nodos se mueven a posiciones
+			// distintas en el nuevo array.
+			
+			// NOTA: por eficiencia movemos los nodos del array antiguo al 
+			// nuevo, no creamos nuevos nodos. 
+			
+			// Recorremos la lista de nodos
+			Nodo *nodo = vAnt[i];
+			while (nodo != NULL) {
+				Nodo *aux = nodo;
+				nodo = nodo->_sig;
+				
+				// Calculamos el nuevo índice del nodo, lo desenganchamos del 
+				// array antiguo y lo enganchamos al nuevo.
+				unsigned int ind = ::hash(aux->_clave) % _tam;
+				aux->_sig = _v[ind];
+				_v[ind] = aux;
+			}
+		}
+		
+		// Borramos el array antiguo (ya no contiene ningún nodo).
+		delete[] vAnt;
 	}
-
+	
 	/**
-	 Elimina (si existe) la clave/valor de la estructura jerárquica
-	 de nodos apuntada por p. Si la clave aparecía en la propia raíz,
-	 ésta cambiará, por lo que se devuelve la nueva raíz. Si no cambia
-	 se devuelve p.
-
-	 @param p Raíz de la estructura jerárquica donde borrar la clave.
-	 @param clave Clave a borrar.
-	 @return Nueva raíz de la estructura, tras el borrado. Si la raíz
-	 no cambia, se devuelve el propio p.
-	*/
-	static Nodo *borraAux(Nodo *p, const Clave &clave) {
-
-		if (p == NULL)
-			return NULL;
-
-		if (clave == p->_clave) {
-			return borraRaiz(p);
-		} else if (clave < p->_clave) {
-			p->_iz = borraAux(p->_iz, clave);
-			return p;
-		} else { // clave > p->_clave
-			p->_dr = borraAux(p->_dr, clave);
-			return p;
+	 * Busca un nodo a partir del nodo "act" que contenga la clave dada. Si lo 
+	 * encuentra, "act" quedará apuntando a dicho nodo y "ant" al nodo anterior.
+	 * Si no lo encuentra "act" quedará apuntando a NULL.
+	 *
+	 * @param clave clave del nodo que se busca.
+	 * @param act [in/out] inicialmente indica el primer nodo de la búsqueda y 
+	 *            al finalizar indica el nodo encontrado o NULL.
+	 * @param ant [out] puntero al nodo anterior a "act" o NULL.
+	 */
+	static void buscaNodo(const C &clave, Nodo* &act, Nodo* &ant) {
+		ant = NULL;
+		bool encontrado = false;
+		while ((act != NULL) && !encontrado) {
+			
+			// Comprobar si el nodo actual contiene la clave buscada
+			if (act->_clave == clave) {
+				encontrado = true;
+			} else {
+				ant = act;
+				act = act->_sig;
+			}
 		}
 	}
-
+	
 	/**
-	 Borra la raíz de la estructura jerárquica de nodos
-	 y devuelve el puntero a la nueva raíz que garantiza
-	 que la estructura sigue siendo válida para un árbol de
-	 búsqueda (claves ordenadas).
+	 * Busca un nodo a partir de "prim" que contenga la clave dada. A 
+	 * diferencia del otro método "buscaNodo", este no devuelve un puntero al
+	 * nodo anterior.
+	 *
+	 * @param clave clave del nodo que se busca.
+	 * @param prim nodo a partir del cual realizar la búsqueda. 
+	 * @return nodo encontrado o NULL.
 	 */
-	static Nodo *borraRaiz(Nodo *p) {
-
-		Nodo *aux;
-
-		// Si no hay hijo izquierdo, la raíz pasa a ser
-		// el hijo derecho
-		if (p->_iz == NULL) {
-			aux = p->_dr;
-			delete p;
-			return aux;
-		} else
-		// Si no hay hijo derecho, la raíz pasa a ser
-		// el hijo izquierdo
-		if (p->_dr == NULL) {
-			aux = p->_iz;
-			delete p;
-			return aux;
-		} else {
-		// Convertimos el elemento más pequeño del hijo derecho
-		// en la raíz.
-			return mueveMinYBorra(p);
-		}
+	static Nodo* buscaNodo(const C &clave, Nodo* prim) {
+		Nodo *act = prim;
+		Nodo *ant = NULL;
+		buscaNodo(clave, act, ant);
+		return act;
 	}
-
+		
 	/**
-	 Método auxiliar para el borrado; recibe un puntero a la
-	 raíz a borrar. Busca el elemento más pequeño del hijo derecho
-	 que se convertirá en la raíz (que devolverá), borra la antigua
-	 raíz (p) y "cose" todos los punteros, de forma que ahora:
-
-	   - El mínimo pasa a ser la raíz, cuyo hijo izquierdo y
-	     derecho eran los hijos izquierdo y derecho de la raíz
-	     antigua.
-	   - El hijo izquierdo del padre del elemento más pequeño
-	     pasa a ser el antiguo hijo derecho de ese mínimo.
+	 * Ocupación máxima permitida antes de ampliar la tabla en tanto por cientos.
 	 */
-	static Nodo *mueveMinYBorra(Nodo *p) {
+	static const unsigned int MAX_OCUPACION = 80;
+	
+	
+	Nodo **_v;               ///< Array de punteros a Nodo.
+	unsigned int _tam;       ///< Tamaño del array _v.
+	unsigned int _numElems;  ///< Número de elementos en la tabla.
+	
 
-		// Vamos bajando hasta que encontramos el elemento
-		// más pequeño (aquel que no tiene hijo izquierdo).
-		// Vamos guardando también el padre (que será null
-		// si el hijo derecho es directamente el elemento
-		// más pequeño).
-		Nodo *padre = NULL;
-		Nodo *aux = p->_dr;
-		while (aux->_iz != NULL) {
-			padre = aux;
-			aux = aux->_iz;
-		}
-
-		// aux apunta al elemento más pequeño.
-		// padre apunta a su padre (si el nodo es hijo izquierdo)
-
-		// Dos casos dependiendo de si el padre del nodo con 
-		// el mínimo es o no la raíz a eliminar
-		// (=> padre != NULL)
-		if (padre != NULL) {
-			padre->_iz = aux->_dr;
-			aux->_iz = p->_iz;
-			aux->_dr = p->_dr;
-		} else {
-			aux->_iz = p->_iz;
-		}
-
-		delete p;
-		return aux;
-	}
-
-	/** 
-	 Puntero a la raíz de la estructura jerárquica
-	 de nodos.
-	 */
-	Nodo *_ra;
 };
-
-#endif // __Arbus_H
 
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <vector>
+#include <algorithm>
 
 using namespace std;
 
-#define DEBUGGING 0
+#define DEBUGGING 1
 const char* DEBUG_INPUT_EXAMPLE = "1\n"
 								  "Red Alder\n"
 								  "Ash\n"
@@ -1300,7 +1310,7 @@ const string ENDLINE_STRING = "\n";
 
 void _10226(istream& input)
 {
-	Arbusto<string , uint> countData;
+	Tarbusto<string , uint> countData;
 	uint testsCount;
 	uint treesCount;
 	Lista<string> results;
@@ -1328,19 +1338,26 @@ void _10226(istream& input)
 			treesCount++;
 		}
 
-		for(Arbusto<string , uint>::Iterador it = countData.principio() ; it != countData.final() ; it.avanza())
+		vector<string> unorderedResults;
+
+		for(Tarbusto<string , uint>::Iterador it = countData.principio() ; it != countData.final() ; it.avanza())
 		{
 			stringstream stream;
 
 			stream << it.clave() << " " << std::fixed << std::setprecision(4) << (float)((it.valor() / (float)treesCount) * 100) << endl;
 
-			results.insertar( stream.str() , results.final() );
+			unorderedResults.push_back( stream.str() );
 		}
+
+		std::sort(unorderedResults.begin() , unorderedResults.end());
+
+		for(vector<string>::iterator it = unorderedResults.begin() ; it != unorderedResults.end() ; ++it)
+			results.insertar(*it , results.final());
 
 		input.get();//Linea vacía entre tests.
 		results.insertar( ENDLINE_STRING , results.final() );
 
-		countData.borra();//Borra el arbol (Modificación mía)
+		countData = Tarbusto<string , uint>();//Nueva tabla...Si tuviera clear() no haría esta burrada 
 	}
 
 	for(Lista<string>::Iterador it = results.principio() ; it != results.final() ; it.avanza() )
