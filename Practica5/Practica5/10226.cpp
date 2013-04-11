@@ -91,6 +91,12 @@ DECLARA_EXCEPCION(EListaVacia);
  */
 DECLARA_EXCEPCION(EAccesoInvalido);
 
+/**
+ Excepción generada por algunas operaciones de los
+ árboles de búsqueda.
+ */
+DECLARA_EXCEPCION(EClaveErronea);
+
 #endif // __EXCEPCIONES_H
 
 /**
@@ -845,6 +851,21 @@ public:
 		_ra = borraAux(_ra, clave);
 	}
 
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// @fn	void borra()
+	///
+	/// @brief	Deletes tree's root (Clears the tree).
+	///
+	/// @author	Manu
+	/// @date	11/04/2013
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	void borra()
+	{
+		delete _ra;
+		_ra=NULL;
+	}
+
 	/**
 	 Operación observadora que devuelve el valor asociado
 	 a una clave dada.
@@ -1224,25 +1245,121 @@ private:
 
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 
 using namespace std;
 
-const bool DEBUGGING = true;
-const char* DEBUG_INPUT_EXAMPLE = "";
+#define DEBUGGING 0
+const char* DEBUG_INPUT_EXAMPLE = "1\n"
+								  "Red Alder\n"
+								  "Ash\n"
+								  "Aspen\n"
+								  "Basswood\n"
+								  "Ash\n"
+								  "Beech\n"
+								  "Yellow Birch\n"
+								  "Ash\n"
+								  "Cherry\n"
+								  "Cottonwood\n"
+								  "Ash\n"
+								  "Cypress\n"
+								  "Red Elm\n"
+								  "Gum\n"
+								  "Hackberry\n"
+								  "White Oak\n"
+								  "Hickory\n"
+								  "Pecan\n"
+								  "Hard Maple\n"
+								  "White Oak\n"
+								  "Soft Maple\n"
+								  "Red Oak\n"
+								  "Red Oak\n"
+								  "White Oak\n"
+								  "Poplan\n"
+								  "Sassafras\n"
+								  "Sycamore\n"
+								  "Black Walnut\n"
+								  "Willow\n"
+								  "\n";
+
+#ifndef uint
+typedef unsigned int uint;
+#endif
+
+#if DEBUGGING
+#define DEBUG_TRACE(x) cout << x << endl; 
+#else
+#define DEBUG_TRACE(x)
+#endif
+
+#define TRUE(x) ((x) == 1)
+#define FALSE(x) (!TRUE(x))
+
+const char   ENDLINE_CHAR   = '\n';
+const string ENDLINE_STRING = "\n";
 
 void _10226(istream& input)
 {
+	Arbusto<string , uint> countData;
+	uint testsCount;
+	uint treesCount;
+	Lista<string> results;
 
+	input >> testsCount;
+	input.get();//Linea en blanco
+
+	for(uint i = 0 ; i < testsCount ; ++i)
+	{
+		treesCount = 0;
+
+		while(input.peek() != ENDLINE_CHAR)
+		{
+			string tree; std::getline(input,tree);
+			uint treeCount;
+
+			if( countData.esta(tree) ) 
+			{
+				treeCount = countData.consulta(tree);
+				countData.inserta(tree , treeCount+1);
+			}
+			else
+				countData.inserta(tree , 1);
+
+			treesCount++;
+		}
+
+		for(Arbusto<string , uint>::Iterador it = countData.principio() ; it != countData.final() ; it.avanza())
+		{
+			stringstream stream;
+
+			stream << it.clave() << " " << std::fixed << std::setprecision(4) << (float)((it.valor() / (float)treesCount) * 100) << endl;
+
+			results.insertar( stream.str() , results.final() );
+		}
+
+		input.get();//Linea vacía entre tests.
+		results.insertar( ENDLINE_STRING , results.final() );
+
+		countData.borra();//Borra el arbol (Modificación mía)
+	}
+
+	for(Lista<string>::Iterador it = results.principio() ; it != results.final() ; it.avanza() )
+		cout << it.elem();
 }
 
-void main()
+int main()
 {
-	if(DEBUGGING)
+	if(TRUE(DEBUGGING))
 	{
 		stringstream input(DEBUG_INPUT_EXAMPLE);
 
 		_10226(input);
+
+		cin.sync();
+		cin.get();
 	}
 	else
 		_10226(cin);
+
+	return 0;
 }
